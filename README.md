@@ -310,8 +310,9 @@ Interface Gradio avec :
 3. Tests d'intégration (`tests/integration/`)
 
 **CD (`cd.yml`)** - déclenché sur push main :
-1. Build et push des images Docker (API + Webapp) sur DockerHub
-2. Déploiement sur Kubernetes
+1. Build de l'image Docker API (`Dockerfile.api`)
+2. Build de l'image Docker Webapp (`Dockerfile.webapp`)
+3. Validation que les images se construisent correctement
 
 ### Kubernetes (`k8s/`)
 
@@ -379,6 +380,22 @@ L'API expose un endpoint **`GET /metrics`** avec 4 métriques Prometheus :
 - Latence p50/p95/p99
 - Taux d'erreur
 - Moyenne de détections par requête
+
+## Arrêter et relancer les services
+
+### Dev
+
+```bash
+docker compose down     # stopper tous les services
+docker compose up -d    # relancer
+```
+
+### Prod (Kubernetes)
+
+```bash
+minikube stop           # stopper le cluster (pods, volumes conservés)
+minikube start          # relancer (tous les pods redémarrent automatiquement)
+```
 
 ## Compatibilité
 
