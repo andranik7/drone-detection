@@ -1,7 +1,5 @@
 """Unit tests for data preprocessing."""
 
-import tempfile
-from pathlib import Path
 
 from src.data.preprocess import validate_label, validate_image
 
