@@ -1,0 +1,62 @@
+{
+  "dashboard": {
+    "title": "Drone Detection API",
+    "panels": [
+      {
+        "title": "Total Predictions",
+        "type": "stat",
+        "gridPos": {"h": 6, "w": 6, "x": 0, "y": 0},
+        "targets": [{"expr": "predictions_total", "refId": "A"}],
+        "datasource": "Prometheus"
+      },
+      {
+        "title": "Total Errors",
+        "type": "stat",
+        "gridPos": {"h": 6, "w": 6, "x": 6, "y": 0},
+        "targets": [{"expr": "predictions_errors_total", "refId": "A"}],
+        "datasource": "Prometheus"
+      },
+      {
+        "title": "Total Drones Detected",
+        "type": "stat",
+        "gridPos": {"h": 6, "w": 6, "x": 12, "y": 0},
+        "targets": [{"expr": "detections_total", "refId": "A"}],
+        "datasource": "Prometheus"
+      },
+      {
+        "title": "Prediction Rate (req/s)",
+        "type": "timeseries",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 6},
+        "targets": [{"expr": "rate(predictions_total[1m])", "legendFormat": "req/s", "refId": "A"}],
+        "datasource": "Prometheus"
+      },
+      {
+        "title": "Prediction Latency (p50, p95, p99)",
+        "type": "timeseries",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 6},
+        "targets": [
+          {"expr": "histogram_quantile(0.50, rate(prediction_latency_seconds_bucket[5m]))", "legendFormat": "p50", "refId": "A"},
+          {"expr": "histogram_quantile(0.95, rate(prediction_latency_seconds_bucket[5m]))", "legendFormat": "p95", "refId": "B"},
+          {"expr": "histogram_quantile(0.99, rate(prediction_latency_seconds_bucket[5m]))", "legendFormat": "p99", "refId": "C"}
+        ],
+        "datasource": "Prometheus"
+      },
+      {
+        "title": "Error Rate",
+        "type": "timeseries",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 14},
+        "targets": [{"expr": "rate(predictions_errors_total[1m])", "legendFormat": "errors/s", "refId": "A"}],
+        "datasource": "Prometheus"
+      },
+      {
+        "title": "Average Detections per Request",
+        "type": "timeseries",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 14},
+        "targets": [{"expr": "rate(detections_total[5m]) / rate(predictions_total[5m])", "legendFormat": "avg drones/req", "refId": "A"}],
+        "datasource": "Prometheus"
+      }
+    ],
+    "time": {"from": "now-1h", "to": "now"},
+    "refresh": "10s"
+  }
+}
