@@ -1,0 +1,10 @@
+auth:
+  username: airflow
+  password: airflow
+  database: airflow
+primary:
+  initdb:
+    scripts:
+      init-mlflow-db.sql: |
+        CREATE DATABASE mlflow;
+        GRANT ALL PRIVILEGES ON DATABASE mlflow TO airflow;

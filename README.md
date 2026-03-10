@@ -9,16 +9,16 @@ Pipeline MLOps pour la détection de drones par YOLOv8, avec tracking MLflow, or
 | Composant | Outil | Justification |
 |---|---|---|
 | ML Framework | YOLOv8n (Ultralytics) | Format natif du dataset, léger, rapide |
-| Orchestrateur | Apache Airflow 2.7.3 | Imposé par le sujet |
+| Orchestrateur | Apache Airflow | Imposé par le sujet |
 | Tracking & Registry | MLflow | Imposé par le sujet |
 | Stockage objets | MinIO | S3-compatible, local, gratuit |
-| Base de données | PostgreSQL 15 | Backend store pour Airflow et MLflow |
+| Base de données | PostgreSQL | Backend store pour Airflow et MLflow |
 | API Serving | FastAPI | Swagger auto, async, léger |
 | WebApp | Gradio 5 | Upload d'images + visualisation bboxes simple |
 | CI/CD | GitHub Actions | Imposé par le sujet |
 | Conteneurisation | Docker / Docker Compose | Imposé par le sujet |
 | Gestion dépendances | Poetry | Lock file cross-platform, groupes dev/prod |
-| Déploiement | Kubernetes (Minikube) | Imposé par le sujet |
+| Déploiement | Kubernetes (Minikube) + Helm | Imposé par le sujet |
 | Monitoring | Prometheus + Grafana | Métriques API temps réel, dashboards |
 
 ## Architecture
@@ -36,13 +36,14 @@ Pipeline MLOps pour la détection de drones par YOLOv8, avec tracking MLflow, or
                             │                └─────┬─────┘
                     ┌───────▼──────────┐           │
                     │  FastAPI         │◄──────────┘
-                    │  POST /predict   │   (charge le modèle)
+                    │  /predict        │   (charge le modèle)
+                    │  /metrics        │   (Prometheus)
                     └───────┬──────────┘
                             │
-                    ┌───────▼──────────┐
-                    │  Gradio          │
-                    │  (interface web) │
-                    └──────────────────┘
+                    ┌───────▼──────────┐     ┌──────────────┐
+                    │  Gradio          │     │ Prometheus   │
+                    │  (interface web) │     │ + Grafana    │
+                    └──────────────────┘     └──────────────┘
 ```
 
 ## Prérequis
@@ -50,6 +51,7 @@ Pipeline MLOps pour la détection de drones par YOLOv8, avec tracking MLflow, or
 - Python 3.10+
 - [Poetry](https://python-poetry.org/docs/#installation)
 - Docker & Docker Compose
+- Minikube + Helm (pour le déploiement K8s)
 - Compte [Kaggle](https://www.kaggle.com/) (token API)
 
 ## Guide de démarrage
@@ -73,7 +75,7 @@ Le dataset (1012 images train, 347 images valid, 1 classe "drone") est extrait d
 ### Etape 3 : Lancer l'environnement dev
 
 ```bash
-docker compose up -d
+docker compose up -d --build
 ```
 
 | Service | URL | Identifiants |
@@ -120,14 +122,64 @@ poetry run pytest tests/unit/ -v         # 4 tests (validation labels/images)
 poetry run pytest tests/integration/ -v  # 2 tests (API health + predict)
 ```
 
-### Etape 8 : Déploiement Kubernetes
+### Etape 8 : Déploiement Kubernetes (production)
 
 ```bash
-docker build -f docker/Dockerfile.api -t drone-detection-api .
-docker build -f docker/Dockerfile.webapp -t drone-detection-webapp .
-minikube start
+# Démarrer Minikube avec suffisamment de ressources
+minikube start --cpus=4 --memory=7500
+
+# Pointer vers le Docker de Minikube
+eval $(minikube docker-env)
+
+# Build les images
+docker build -f docker/Dockerfile.api -t drone-detection-api:latest .
+docker build -f docker/Dockerfile.webapp -t drone-detection-webapp:latest .
+docker build -f docker/Dockerfile.mlflow -t projet-mlops-mlflow:latest docker/
+
+# Déployer les services infra via Helm
+helm repo add bitnami https://charts.bitnami.com/bitnami
+helm repo add apache-airflow https://airflow.apache.org
+helm repo add minio https://charts.min.io/
+helm install postgresql bitnami/postgresql -f k8s/helm/postgresql-values.yml
+helm install minio minio/minio -f k8s/helm/minio-values.yml
+helm install airflow apache-airflow/airflow -f k8s/helm/airflow-values.yml --timeout 10m
+
+# Déployer les manifests K8s (API, Webapp, MLflow, Prometheus, Grafana)
 kubectl apply -f k8s/
+
+# Vérifier que tout tourne
+kubectl get pods
+
+# Accéder aux services
+minikube service drone-detection-api
+minikube service drone-detection-webapp
+minikube service mlflow
+minikube service prometheus
+minikube service grafana
 ```
+
+## Deux environnements
+
+### Dev (Docker Compose)
+
+Tous les services tournent en local via `docker compose up -d`. L'API charge le modèle depuis MLflow/MinIO.
+
+### Prod (Kubernetes / Minikube)
+
+L'intégralité des services est déployée sur le cluster Kubernetes :
+
+| Service | Déploiement | Méthode |
+|---|---|---|
+| PostgreSQL | Helm chart `bitnami/postgresql` | Bases séparées `airflow` + `mlflow` |
+| MinIO | Helm chart `minio/minio` | Buckets `drone-detection` + `mlflow` |
+| Airflow | Helm chart `apache-airflow/airflow` | Scheduler, API server, DAG processor, Triggerer |
+| MLflow | Manifest K8s (`k8s/mlflow.yml`) | Tracking server + Model Registry |
+| API FastAPI | Manifest K8s (`k8s/api-deployment.yml`) | Modèle `best.pt` embarqué dans l'image |
+| Webapp Gradio | Manifest K8s (`k8s/webapp-deployment.yml`) | Communique avec le Service API interne |
+| Prometheus | Manifest K8s (`k8s/monitoring.yml`) | Scrape `/metrics` de l'API |
+| Grafana | Manifest K8s (`k8s/monitoring.yml`) | Dashboard pré-provisionné |
+
+L'API en production embarque le modèle `best.pt` directement dans l'image Docker (`LOCAL_MODEL_PATH`), ce qui évite la dépendance à MLflow au démarrage.
 
 ## Structure du projet
 
@@ -148,7 +200,7 @@ kubectl apply -f k8s/
 │   │   ├── train.py            # Entraînement YOLOv8n + logging MLflow + register model
 │   │   └── evaluate.py         # Évaluation mAP + comparaison prod vs nouveau modèle
 │   ├── serving/
-│   │   └── api.py              # FastAPI : /health, /predict (upload image → détections)
+│   │   └── api.py              # FastAPI : /health, /predict, /metrics
 │   └── webapp/
 │       └── app.py              # Gradio : upload image → image annotée avec bboxes
 ├── tests/
@@ -159,32 +211,36 @@ kubectl apply -f k8s/
 ├── k8s/
 │   ├── api-deployment.yml      # Deployment + Service (LoadBalancer :8000)
 │   ├── webapp-deployment.yml   # Deployment + Service (LoadBalancer :7860)
-│   └── monitoring.yml          # Prometheus + Grafana (Deployments + Services)
+│   ├── mlflow.yml              # Deployment + Service MLflow
+│   ├── monitoring.yml          # Prometheus + Grafana (Deployments + Services)
+│   └── helm/                   # Values files pour les Helm charts
+│       ├── postgresql-values.yml
+│       ├── minio-values.yml
+│       └── airflow-values.yml
 ├── docker/
-│   ├── Dockerfile.api          # python:3.10-slim + libGL + poetry deps + serving code
+│   ├── Dockerfile.api          # python:3.10-slim + libGL + poetry deps + model + serving code
 │   ├── Dockerfile.webapp       # python:3.10-slim + gradio + requests + pillow
 │   ├── Dockerfile.mlflow       # python:3.10-slim + mlflow + psycopg2 + boto3
 │   ├── Dockerfile.training     # python:3.10-slim + poetry deps + training code
 │   └── init-db.sh              # Crée la base "mlflow" séparée dans PostgreSQL
-├── data/
-│   ├── data.yaml               # Config YOLO : chemins train/val, nc=1, names=[drone]
-│   └── drone_dataset/          # Dataset extrait (gitignored)
+├── models/
+│   └── best.pt                 # Modèle entraîné (embarqué dans l'image Docker prod)
 ├── monitoring/
 │   ├── prometheus/prometheus.yml  # Config Prometheus (scrape API /metrics)
 │   └── grafana/provisioning/     # Datasources + dashboard Grafana pré-provisionné
-├── docker-compose.yml          # 9 services pour l'environnement dev
+├── docker-compose.yml          # Environnement dev (11 services)
 ├── pyproject.toml              # Dépendances Poetry (main + dev)
 └── .gitignore
 ```
 
-## Services Docker Compose
+## Services Docker Compose (dev)
 
 | Service | Image | Port | Rôle |
 |---|---|---|---|
 | postgres | postgres:15 | 5432 | BDD Airflow (`airflow`) + BDD MLflow (`mlflow`) |
 | minio | minio/minio | 9000, 9001 | Stockage S3 : buckets `drone-detection` et `mlflow` |
 | minio-init | minio/mc | - | Init : création des buckets au démarrage |
-| mlflow | custom | 5001→5000 | Tracking server + Model Registry, backend PostgreSQL, artefacts sur MinIO |
+| mlflow | custom | 5001→5000 | Tracking server + Model Registry |
 | airflow-init | apache/airflow:2.7.3 | - | Init : `db upgrade` + création user admin |
 | airflow-webserver | apache/airflow:2.7.3 | 8080 | Interface web Airflow |
 | airflow-scheduler | apache/airflow:2.7.3 | - | Exécution des DAGs |
@@ -198,6 +254,7 @@ kubectl apply -f k8s/
 - **Bases PostgreSQL séparées** : Airflow et MLflow utilisent le même serveur PostgreSQL mais des bases différentes (`airflow` et `mlflow`) pour éviter les conflits de migrations Alembic.
 - **MLflow `--allowed-hosts "*"`** : nécessaire pour que l'interface web soit accessible depuis le navigateur (Docker expose via `0.0.0.0`).
 - **Webapp isolée** : le Dockerfile webapp installe uniquement gradio/requests/pillow via pip (pas poetry) pour éviter les conflits de versions avec FastAPI.
+- **Modèle embarqué en prod** : le `best.pt` est copié dans l'image Docker de l'API pour éviter la dépendance à MLflow/MinIO au démarrage en production.
 
 ## Composants détaillés
 
@@ -234,8 +291,8 @@ Le DAG `continuous_training` utilise un `BranchPythonOperator` pour promouvoir l
 - **GET `/metrics`** : expose les métriques Prometheus (predictions_total, errors, latency, detections).
 
 Chargement du modèle (par ordre de priorité) :
-1. Chemin local (`LOCAL_MODEL_PATH`)
-2. Model Registry MLflow (dernière version Production ou None)
+1. Chemin local (`LOCAL_MODEL_PATH`) — utilisé en prod K8s
+2. Model Registry MLflow (dernière version Production ou None) — utilisé en dev
 3. Fallback : modèle YOLOv8n pré-entraîné (COCO)
 
 ### WebApp (`src/webapp/app.py`)
@@ -258,8 +315,11 @@ Interface Gradio avec :
 
 ### Kubernetes (`k8s/`)
 
-- **api-deployment.yml** : 1 replica, port 8000, `readinessProbe` sur `/health`, Service LoadBalancer.
-- **webapp-deployment.yml** : 1 replica, port 7860, Service LoadBalancer. Variable `API_URL` pointe vers le Service API interne.
+- **api-deployment.yml** : 1 replica, port 8000, `readinessProbe` sur `/health`, `imagePullPolicy: Never`, modèle embarqué via `LOCAL_MODEL_PATH`.
+- **webapp-deployment.yml** : 1 replica, port 7860, `imagePullPolicy: Never`, `API_URL` pointe vers le Service API interne.
+- **mlflow.yml** : MLflow server connecté à PostgreSQL et MinIO.
+- **monitoring.yml** : ConfigMap Prometheus + Deployments/Services Prometheus et Grafana.
+- **helm/** : Values files pour PostgreSQL (bases séparées), MinIO (buckets), Airflow (LocalExecutor).
 
 ## Tests
 

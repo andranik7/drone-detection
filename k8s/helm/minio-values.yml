@@ -1,0 +1,12 @@
+rootUser: minioadmin
+rootPassword: minioadmin
+mode: standalone
+replicas: 1
+resources:
+  requests:
+    memory: 256Mi
+buckets:
+  - name: drone-detection
+  - name: mlflow
+consoleIngress:
+  enabled: false

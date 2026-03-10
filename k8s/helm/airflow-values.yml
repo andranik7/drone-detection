@@ -1,0 +1,30 @@
+executor: LocalExecutor
+data:
+  metadataConnection:
+    user: airflow
+    pass: airflow
+    host: postgresql
+    port: 5432
+    db: airflow
+postgresql:
+  enabled: false
+dags:
+  persistence:
+    enabled: false
+webserver:
+  defaultUser:
+    username: admin
+    password: admin
+config:
+  core:
+    load_examples: "False"
+    dags_are_paused_at_creation: "True"
+env:
+  - name: MLFLOW_TRACKING_URI
+    value: "http://mlflow:5000"
+  - name: MINIO_ENDPOINT
+    value: "minio:9000"
+  - name: MINIO_ACCESS_KEY
+    value: "minioadmin"
+  - name: MINIO_SECRET_KEY
+    value: "minioadmin"
