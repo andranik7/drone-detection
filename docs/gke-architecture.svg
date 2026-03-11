@@ -1,0 +1,242 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 850" font-family="Segoe UI, Arial, sans-serif">
+  <defs>
+    <filter id="shadow" x="-2%" y="-2%" width="104%" height="104%">
+      <feDropShadow dx="2" dy="2" stdDeviation="3" flood-opacity="0.15"/>
+    </filter>
+    <linearGradient id="gcpGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#e8f0fe"/>
+      <stop offset="100%" style="stop-color:#d2e3fc"/>
+    </linearGradient>
+    <linearGradient id="registryGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#fce4ec"/>
+      <stop offset="100%" style="stop-color:#f8bbd0"/>
+    </linearGradient>
+    <linearGradient id="internetGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#e0f2f1"/>
+      <stop offset="100%" style="stop-color:#b2dfdb"/>
+    </linearGradient>
+    <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#555"/>
+    </marker>
+    <marker id="arrowBlue" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#1a73e8"/>
+    </marker>
+    <marker id="arrowGreen" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#0d652d"/>
+    </marker>
+  </defs>
+
+  <!-- Google Cloud Platform border -->
+  <rect x="10" y="10" width="1180" height="830" rx="18" fill="#f8f9fa" stroke="#4285f4" stroke-width="3" filter="url(#shadow)"/>
+  <rect x="10" y="10" width="1180" height="45" rx="18" fill="#4285f4"/>
+  <rect x="10" y="37" width="1180" height="18" fill="#4285f4"/>
+  <text x="600" y="38" text-anchor="middle" font-size="18" font-weight="bold" fill="white">☁ Google Cloud Platform — Projet: gen-lang-client-0325944995</text>
+
+  <!-- Artifact Registry -->
+  <rect x="30" y="70" width="280" height="160" rx="10" fill="url(#registryGrad)" stroke="#c2185b" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="170" y="95" text-anchor="middle" font-size="14" font-weight="bold" fill="#880e4f">🐳 Artifact Registry</text>
+  <text x="170" y="113" text-anchor="middle" font-size="10" fill="#555">europe-west1-docker.pkg.dev</text>
+  <line x1="45" y1="122" x2="295" y2="122" stroke="#e0e0e0" stroke-width="1"/>
+
+  <rect x="50" y="132" width="240" height="28" rx="5" fill="white" stroke="#c2185b" stroke-width="1"/>
+  <text x="170" y="151" text-anchor="middle" font-size="10" fill="#333">drone-detection/api:latest (2.1 GB)</text>
+
+  <rect x="50" y="166" width="240" height="28" rx="5" fill="white" stroke="#c2185b" stroke-width="1"/>
+  <text x="170" y="185" text-anchor="middle" font-size="10" fill="#333">drone-detection/webapp:latest (350 MB)</text>
+
+  <rect x="50" y="200" width="240" height="28" rx="5" fill="white" stroke="#c2185b" stroke-width="1"/>
+  <text x="170" y="219" text-anchor="middle" font-size="10" fill="#333">drone-detection/mlflow:latest (280 MB)</text>
+
+  <!-- Arrow Registry -> GKE -->
+  <line x1="310" y1="160" x2="380" y2="160" stroke="#c2185b" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="345" y="152" text-anchor="middle" font-size="9" fill="#c2185b">pull</text>
+
+  <!-- GKE Autopilot Cluster -->
+  <rect x="380" y="70" width="790" height="530" rx="14" fill="url(#gcpGrad)" stroke="#1a73e8" stroke-width="2" filter="url(#shadow)"/>
+  <text x="775" y="95" text-anchor="middle" font-size="16" font-weight="bold" fill="#1a73e8">☸ GKE Autopilot — drone-cluster (europe-west1)</text>
+  <text x="775" y="113" text-anchor="middle" font-size="10" fill="#555">Nodes gérés automatiquement par Google — scaling automatique</text>
+
+  <!-- Helm: PostgreSQL -->
+  <rect x="400" y="130" width="155" height="100" rx="8" fill="white" stroke="#336791" stroke-width="2" filter="url(#shadow)"/>
+  <text x="477" y="153" text-anchor="middle" font-size="12" font-weight="bold" fill="#336791">PostgreSQL</text>
+  <text x="477" y="169" text-anchor="middle" font-size="9" fill="#888">Helm: bitnami</text>
+  <line x1="410" y1="177" x2="545" y2="177" stroke="#eee" stroke-width="1"/>
+  <text x="477" y="193" text-anchor="middle" font-size="10" fill="#333">DB: airflow</text>
+  <text x="477" y="208" text-anchor="middle" font-size="10" fill="#333">DB: mlflow</text>
+  <rect x="430" y="215" width="95" height="16" rx="3" fill="#e8eaf6" stroke="#5c6bc0" stroke-width="1"/>
+  <text x="477" y="227" text-anchor="middle" font-size="8" fill="#333">ClusterIP :5432</text>
+
+  <!-- Helm: MinIO -->
+  <rect x="575" y="130" width="155" height="100" rx="8" fill="white" stroke="#c72c48" stroke-width="2" filter="url(#shadow)"/>
+  <text x="652" y="153" text-anchor="middle" font-size="12" font-weight="bold" fill="#c72c48">MinIO</text>
+  <text x="652" y="169" text-anchor="middle" font-size="9" fill="#888">Helm: minio</text>
+  <line x1="585" y1="177" x2="720" y2="177" stroke="#eee" stroke-width="1"/>
+  <text x="652" y="193" text-anchor="middle" font-size="10" fill="#333">mlflow/</text>
+  <text x="652" y="208" text-anchor="middle" font-size="10" fill="#333">drone-detection/</text>
+  <rect x="605" y="215" width="95" height="16" rx="3" fill="#e8eaf6" stroke="#5c6bc0" stroke-width="1"/>
+  <text x="652" y="227" text-anchor="middle" font-size="8" fill="#333">ClusterIP :9000</text>
+
+  <!-- Helm: Airflow -->
+  <rect x="750" y="130" width="155" height="100" rx="8" fill="white" stroke="#017cee" stroke-width="2" filter="url(#shadow)"/>
+  <text x="827" y="153" text-anchor="middle" font-size="12" font-weight="bold" fill="#017cee">Airflow</text>
+  <text x="827" y="169" text-anchor="middle" font-size="9" fill="#888">Helm: apache-airflow</text>
+  <line x1="760" y1="177" x2="895" y2="177" stroke="#eee" stroke-width="1"/>
+  <text x="827" y="193" text-anchor="middle" font-size="10" fill="#333">5 pods (webserver,</text>
+  <text x="827" y="208" text-anchor="middle" font-size="10" fill="#333">scheduler, triggerer...)</text>
+  <rect x="780" y="215" width="95" height="16" rx="3" fill="#e8eaf6" stroke="#5c6bc0" stroke-width="1"/>
+  <text x="827" y="227" text-anchor="middle" font-size="8" fill="#333">ClusterIP :8080</text>
+
+  <!-- Helm label -->
+  <rect x="400" y="240" width="510" height="18" rx="4" fill="#bbdefb" stroke="#1a73e8" stroke-width="1"/>
+  <text x="655" y="253" text-anchor="middle" font-size="9" font-weight="bold" fill="#1565c0">⎈ Helm Charts — Infrastructure</text>
+
+  <!-- Connection lines Helm -->
+  <line x1="555" y1="180" x2="575" y2="180" stroke="#999" stroke-width="1" stroke-dasharray="3,2"/>
+  <line x1="730" y1="180" x2="750" y2="180" stroke="#999" stroke-width="1" stroke-dasharray="3,2"/>
+
+  <!-- MLflow -->
+  <rect x="400" y="275" width="160" height="90" rx="8" fill="white" stroke="#0194e2" stroke-width="2" filter="url(#shadow)"/>
+  <text x="480" y="298" text-anchor="middle" font-size="12" font-weight="bold" fill="#0194e2">MLflow</text>
+  <text x="480" y="314" text-anchor="middle" font-size="10" fill="#555">Tracking + Registry</text>
+  <line x1="410" y1="322" x2="550" y2="322" stroke="#eee" stroke-width="1"/>
+  <rect x="420" y="332" width="120" height="22" rx="4" fill="#e8f5e9" stroke="#4caf50" stroke-width="1.5"/>
+  <text x="480" y="348" text-anchor="middle" font-size="10" font-weight="bold" fill="#2e7d32">☁ LB :5000</text>
+
+  <!-- API -->
+  <rect x="580" y="275" width="160" height="90" rx="8" fill="white" stroke="#009688" stroke-width="2" filter="url(#shadow)"/>
+  <text x="660" y="298" text-anchor="middle" font-size="12" font-weight="bold" fill="#009688">FastAPI</text>
+  <text x="660" y="314" text-anchor="middle" font-size="10" fill="#555">/predict /health /metrics</text>
+  <line x1="590" y1="322" x2="730" y2="322" stroke="#eee" stroke-width="1"/>
+  <rect x="600" y="332" width="120" height="22" rx="4" fill="#e8f5e9" stroke="#4caf50" stroke-width="1.5"/>
+  <text x="660" y="348" text-anchor="middle" font-size="10" font-weight="bold" fill="#2e7d32">☁ LB :8000</text>
+
+  <!-- Webapp -->
+  <rect x="760" y="275" width="160" height="90" rx="8" fill="white" stroke="#ff5722" stroke-width="2" filter="url(#shadow)"/>
+  <text x="840" y="298" text-anchor="middle" font-size="12" font-weight="bold" fill="#ff5722">Gradio Webapp</text>
+  <text x="840" y="314" text-anchor="middle" font-size="10" fill="#555">Interface utilisateur</text>
+  <line x1="770" y1="322" x2="910" y2="322" stroke="#eee" stroke-width="1"/>
+  <rect x="780" y="332" width="120" height="22" rx="4" fill="#e8f5e9" stroke="#4caf50" stroke-width="1.5"/>
+  <text x="840" y="348" text-anchor="middle" font-size="10" font-weight="bold" fill="#2e7d32">☁ LB :7860</text>
+
+  <!-- Arrow Webapp -> API -->
+  <line x1="760" y1="310" x2="740" y2="310" stroke="#ff5722" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Arrow PostgreSQL -> MLflow -->
+  <line x1="477" y1="230" x2="477" y2="275" stroke="#336791" stroke-width="1.5" stroke-dasharray="4,2"/>
+
+  <!-- Arrow MinIO -> MLflow -->
+  <line x1="610" y1="230" x2="520" y2="275" stroke="#c72c48" stroke-width="1.5" stroke-dasharray="4,2"/>
+
+  <!-- Prometheus -->
+  <rect x="940" y="130" width="210" height="100" rx="8" fill="white" stroke="#e6522c" stroke-width="2" filter="url(#shadow)"/>
+  <text x="1045" y="153" text-anchor="middle" font-size="12" font-weight="bold" fill="#e6522c">Prometheus</text>
+  <text x="1045" y="169" text-anchor="middle" font-size="10" fill="#555">Scrape API /metrics (15s)</text>
+  <line x1="950" y1="177" x2="1140" y2="177" stroke="#eee" stroke-width="1"/>
+  <text x="1045" y="195" text-anchor="middle" font-size="9" fill="#333">predictions_total, latency</text>
+  <text x="1045" y="209" text-anchor="middle" font-size="9" fill="#333">errors_total, detections</text>
+  <rect x="985" y="215" width="120" height="16" rx="3" fill="#e8f5e9" stroke="#4caf50" stroke-width="1"/>
+  <text x="1045" y="227" text-anchor="middle" font-size="8" font-weight="bold" fill="#2e7d32">☁ LB :9090</text>
+
+  <!-- Grafana -->
+  <rect x="940" y="275" width="210" height="90" rx="8" fill="white" stroke="#f46800" stroke-width="2" filter="url(#shadow)"/>
+  <text x="1045" y="298" text-anchor="middle" font-size="12" font-weight="bold" fill="#f46800">Grafana</text>
+  <text x="1045" y="314" text-anchor="middle" font-size="10" fill="#555">Dashboard pré-provisionné</text>
+  <line x1="950" y1="322" x2="1140" y2="322" stroke="#eee" stroke-width="1"/>
+  <rect x="985" y="332" width="120" height="22" rx="4" fill="#e8f5e9" stroke="#4caf50" stroke-width="1.5"/>
+  <text x="1045" y="348" text-anchor="middle" font-size="10" font-weight="bold" fill="#2e7d32">☁ LB :3000</text>
+
+  <!-- Arrow Prometheus -> Grafana -->
+  <line x1="1045" y1="231" x2="1045" y2="275" stroke="#e6522c" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Arrow API -> Prometheus -->
+  <line x1="740" y1="300" x2="940" y2="175" stroke="#e6522c" stroke-width="1.5" stroke-dasharray="4,2"/>
+  <text x="850" y="225" text-anchor="middle" font-size="9" fill="#e6522c">scrape</text>
+
+  <!-- Manifests label -->
+  <rect x="400" y="375" width="760" height="18" rx="4" fill="#ffe0b2" stroke="#ff9800" stroke-width="1"/>
+  <text x="780" y="388" text-anchor="middle" font-size="9" font-weight="bold" fill="#e65100">📄 Manifests K8s custom (k8s/gke/) — Applicatif + Monitoring</text>
+
+  <!-- GKE Autopilot features -->
+  <rect x="400" y="410" width="760" height="180" rx="10" fill="white" stroke="#1a73e8" stroke-width="1.5" stroke-dasharray="5,3" filter="url(#shadow)"/>
+  <text x="780" y="435" text-anchor="middle" font-size="13" font-weight="bold" fill="#1a73e8">⚡ GKE Autopilot — Fonctionnalités automatiques</text>
+  <line x1="420" y1="445" x2="1140" y2="445" stroke="#e0e0e0" stroke-width="1"/>
+
+  <text x="560" y="472" text-anchor="middle" font-size="11" fill="#333">🔄 Auto-scaling des nodes</text>
+  <text x="560" y="490" text-anchor="middle" font-size="9" fill="#777">Les nodes sont créés/supprimés</text>
+  <text x="560" y="504" text-anchor="middle" font-size="9" fill="#777">selon la charge</text>
+
+  <text x="780" y="472" text-anchor="middle" font-size="11" fill="#333">🛡 Sécurité gérée</text>
+  <text x="780" y="490" text-anchor="middle" font-size="9" fill="#777">Patches OS, hardening</text>
+  <text x="780" y="504" text-anchor="middle" font-size="9" fill="#777">automatiques</text>
+
+  <text x="1000" y="472" text-anchor="middle" font-size="11" fill="#333">💰 Pay-per-pod</text>
+  <text x="1000" y="490" text-anchor="middle" font-size="9" fill="#777">Facturation uniquement</text>
+  <text x="1000" y="504" text-anchor="middle" font-size="9" fill="#777">sur les pods actifs</text>
+
+  <text x="560" y="540" text-anchor="middle" font-size="11" fill="#333">🌐 Load Balancers</text>
+  <text x="560" y="558" text-anchor="middle" font-size="9" fill="#777">IPs publiques automatiques</text>
+  <text x="560" y="572" text-anchor="middle" font-size="9" fill="#777">pour chaque Service LB</text>
+
+  <text x="780" y="540" text-anchor="middle" font-size="11" fill="#333">💾 Persistent Volumes</text>
+  <text x="780" y="558" text-anchor="middle" font-size="9" fill="#777">Disques GCE provisionnés</text>
+  <text x="780" y="572" text-anchor="middle" font-size="9" fill="#777">automatiquement</text>
+
+  <text x="1000" y="540" text-anchor="middle" font-size="11" fill="#333">📍 Région europe-west1</text>
+  <text x="1000" y="558" text-anchor="middle" font-size="9" fill="#777">Belgique — faible latence</text>
+  <text x="1000" y="572" text-anchor="middle" font-size="9" fill="#777">pour l'Europe</text>
+
+  <!-- Internet / Users -->
+  <rect x="30" y="630" width="1140" height="120" rx="12" fill="url(#internetGrad)" stroke="#00897b" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="600" y="658" text-anchor="middle" font-size="15" font-weight="bold" fill="#004d40">🌍 Internet — Accès public via IPs externes</text>
+  <line x1="50" y1="668" x2="1150" y2="668" stroke="#b2dfdb" stroke-width="1"/>
+
+  <!-- Public URLs -->
+  <rect x="50" y="680" width="190" height="55" rx="6" fill="white" stroke="#009688" stroke-width="1.5"/>
+  <text x="145" y="700" text-anchor="middle" font-size="11" font-weight="bold" fill="#009688">API Swagger</text>
+  <text x="145" y="718" text-anchor="middle" font-size="9" fill="#555">34.78.87.74:8000/docs</text>
+  <text x="145" y="730" text-anchor="middle" font-size="9" fill="#888">REST API + Documentation</text>
+
+  <rect x="260" y="680" width="190" height="55" rx="6" fill="white" stroke="#ff5722" stroke-width="1.5"/>
+  <text x="355" y="700" text-anchor="middle" font-size="11" font-weight="bold" fill="#ff5722">Webapp Gradio</text>
+  <text x="355" y="718" text-anchor="middle" font-size="9" fill="#555">35.187.10.142:7860</text>
+  <text x="355" y="730" text-anchor="middle" font-size="9" fill="#888">Upload image → détection</text>
+
+  <rect x="470" y="680" width="190" height="55" rx="6" fill="white" stroke="#0194e2" stroke-width="1.5"/>
+  <text x="565" y="700" text-anchor="middle" font-size="11" font-weight="bold" fill="#0194e2">MLflow UI</text>
+  <text x="565" y="718" text-anchor="middle" font-size="9" fill="#555">34.140.199.246:5000</text>
+  <text x="565" y="730" text-anchor="middle" font-size="9" fill="#888">Expériences + Model Registry</text>
+
+  <rect x="680" y="680" width="190" height="55" rx="6" fill="white" stroke="#e6522c" stroke-width="1.5"/>
+  <text x="775" y="700" text-anchor="middle" font-size="11" font-weight="bold" fill="#e6522c">Prometheus</text>
+  <text x="775" y="718" text-anchor="middle" font-size="9" fill="#555">34.38.252.112:9090</text>
+  <text x="775" y="730" text-anchor="middle" font-size="9" fill="#888">Métriques brutes</text>
+
+  <rect x="890" y="680" width="190" height="55" rx="6" fill="white" stroke="#f46800" stroke-width="1.5"/>
+  <text x="985" y="700" text-anchor="middle" font-size="11" font-weight="bold" fill="#f46800">Grafana</text>
+  <text x="985" y="718" text-anchor="middle" font-size="9" fill="#555">34.140.81.17:3000</text>
+  <text x="985" y="730" text-anchor="middle" font-size="9" fill="#888">Dashboards monitoring</text>
+
+  <!-- Arrows from LBs to Internet -->
+  <line x1="660" y1="354" x2="145" y2="680" stroke="#009688" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <line x1="840" y1="354" x2="355" y2="680" stroke="#ff5722" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <line x1="480" y1="354" x2="565" y2="680" stroke="#0194e2" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <line x1="1045" y1="231" x2="775" y2="680" stroke="#e6522c" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <line x1="1045" y1="354" x2="985" y2="680" stroke="#f46800" stroke-width="1.5" stroke-dasharray="5,3"/>
+
+  <!-- Local machine -->
+  <rect x="30" y="270" width="280" height="130" rx="10" fill="white" stroke="#555" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="170" y="295" text-anchor="middle" font-size="13" font-weight="bold" fill="#333">💻 Machine locale</text>
+  <line x1="45" y1="305" x2="295" y2="305" stroke="#eee" stroke-width="1"/>
+  <text x="170" y="325" text-anchor="middle" font-size="10" fill="#555">docker build --platform linux/amd64</text>
+  <text x="170" y="343" text-anchor="middle" font-size="10" fill="#555">docker push → Artifact Registry</text>
+  <text x="170" y="361" text-anchor="middle" font-size="10" fill="#555">kubectl apply -f k8s/gke/</text>
+  <text x="170" y="379" text-anchor="middle" font-size="10" fill="#555">helm install ...</text>
+
+  <!-- Arrow local -> Registry -->
+  <line x1="170" y1="270" x2="170" y2="230" stroke="#555" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="185" y="255" font-size="9" fill="#555">push</text>
+
+  <!-- Arrow local -> GKE -->
+  <line x1="310" y1="340" x2="380" y2="340" stroke="#1a73e8" stroke-width="1.5" marker-end="url(#arrowBlue)"/>
+  <text x="345" y="333" text-anchor="middle" font-size="9" fill="#1a73e8">deploy</text>
+</svg>
