@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: drone-detection-webapp
+  labels:
+    app: drone-detection-webapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: drone-detection-webapp
+  template:
+    metadata:
+      labels:
+        app: drone-detection-webapp
+    spec:
+      containers:
+        - name: webapp
+          image: europe-west1-docker.pkg.dev/gen-lang-client-0325944995/drone-detection/webapp:latest
+          ports:
+            - containerPort: 7860
+          env:
+            - name: API_URL
+              value: "http://drone-detection-api:8000"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: drone-detection-webapp
+spec:
+  selector:
+    app: drone-detection-webapp
+  ports:
+    - port: 7860
+      targetPort: 7860
+  type: LoadBalancer

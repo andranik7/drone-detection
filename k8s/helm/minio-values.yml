@@ -8,5 +8,7 @@ resources:
 buckets:
   - name: drone-detection
   - name: mlflow
+persistence:
+  size: 10Gi
 consoleIngress:
   enabled: false

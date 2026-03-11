@@ -18,7 +18,9 @@ Pipeline MLOps pour la détection de drones par YOLOv8, avec tracking MLflow, or
 | CI/CD | GitHub Actions | Imposé par le sujet |
 | Conteneurisation | Docker / Docker Compose | Imposé par le sujet |
 | Gestion dépendances | Poetry | Lock file cross-platform, groupes dev/prod |
-| Déploiement | Kubernetes (Minikube) + Helm | Imposé par le sujet |
+| Déploiement local | Kubernetes (Minikube) + Helm | Imposé par le sujet |
+| Déploiement cloud | Google Kubernetes Engine (GKE) Autopilot | Production réelle |
+| Registry Docker | Google Artifact Registry | Stockage des images Docker cloud |
 | Monitoring | Prometheus + Grafana | Métriques API temps réel, dashboards |
 
 ## Architecture
@@ -62,21 +64,30 @@ Pipeline MLOps pour la détection de drones par YOLOv8, avec tracking MLflow, or
 poetry install
 ```
 
-### Etape 2 : Téléchargement du dataset
+### Etape 2 : Configurer les credentials Kaggle
 
-Placer le token Kaggle dans `~/.kaggle/kaggle.json` puis :
+Récupérer le token sur [kaggle.com/settings](https://www.kaggle.com/settings) → API → "Create New Token", puis :
 
 ```bash
-poetry run python -m src.data.download
+mkdir -p ~/.kaggle
+mv ~/Downloads/kaggle.json ~/.kaggle/
+chmod 600 ~/.kaggle/kaggle.json
 ```
 
-Le dataset (1012 images train, 347 images valid, 1 classe "drone") est extrait dans `data/drone_dataset/`.
+Créer un fichier `.env` à la racine du projet (utilisé par Docker Compose pour Airflow) :
+
+```bash
+echo "KAGGLE_USERNAME=<ton_username>" > .env
+echo "KAGGLE_KEY=<ta_clé>" >> .env
+```
 
 ### Etape 3 : Lancer l'environnement dev
 
 ```bash
 docker compose up -d --build
 ```
+
+> Le premier lancement prend ~2 min (installation des dépendances Python dans les containers Airflow).
 
 | Service | URL | Identifiants |
 |---|---|---|
@@ -88,22 +99,43 @@ docker compose up -d --build
 | Prometheus | http://localhost:9090 | - |
 | Grafana | http://localhost:3000 | admin / admin |
 
-### Etape 4 : Entraînement
+### Etape 4 : Téléchargement du dataset (via Airflow)
 
-En local (5 epochs, ~12 min sur CPU M4) :
+Dans Airflow (http://localhost:8080) :
+1. Activer le DAG **`data_ingestion`**
+2. Déclencher manuellement (bouton "Trigger DAG")
+3. Le DAG télécharge le dataset depuis Kaggle, corrige automatiquement le `data.yaml`, puis valide et nettoie les données
+
+Le dataset (1012 images train, 347 images valid, 1 classe "drone") est extrait dans `data/drone_dataset/`.
+
+Alternative en ligne de commande (sans Airflow) :
+
+```bash
+poetry run python -m src.data.download
+```
+
+### Etape 5 : Entraînement (via Airflow)
+
+Dans Airflow, déclencher le DAG **`train_pipeline`** (20 epochs, ~45 min sur CPU).
+
+Le DAG exécute l'entraînement YOLOv8n et le modèle est automatiquement :
+- Loggé dans MLflow (métriques + artefacts)
+- Enregistré dans le Model Registry (`drone-detection-yolo`)
+- Stocké sur MinIO (bucket `mlflow`)
+
+Suivi des logs d'entraînement en temps réel :
+
+```bash
+docker compose exec airflow-scheduler bash -c 'find /opt/airflow/logs/dag_id=train_pipeline -name "attempt=1.log" | sort | tail -1 | xargs tail -f'
+```
+
+Alternative en local (5 epochs, ~12 min sur CPU M4) :
 
 ```bash
 poetry run python -c "from src.training.train import train; train(epochs=5, imgsz=640, batch=8)"
 ```
 
-Ou via Airflow : déclencher le DAG `train_pipeline`.
-
-Le modèle est automatiquement :
-- Loggé dans MLflow (métriques + artefacts)
-- Enregistré dans le Model Registry (`drone-detection-yolo`)
-- Stocké sur MinIO (bucket `mlflow`)
-
-### Etape 5 : Tester l'API
+### Etape 6 : Tester l'API
 
 ```bash
 curl -X POST http://localhost:8000/predict -F "file=@data/drone_dataset/valid/images/pic_001.jpg"
@@ -111,18 +143,18 @@ curl -X POST http://localhost:8000/predict -F "file=@data/drone_dataset/valid/im
 
 Ou via Swagger : http://localhost:8000/docs
 
-### Etape 6 : WebApp
+### Etape 7 : WebApp
 
 Ouvrir http://localhost:7860, uploader une image, ajuster le seuil de confiance.
 
-### Etape 7 : Tests
+### Etape 8 : Tests
 
 ```bash
 poetry run pytest tests/unit/ -v         # 4 tests (validation labels/images)
 poetry run pytest tests/integration/ -v  # 2 tests (API health + predict)
 ```
 
-### Etape 8 : Déploiement Kubernetes (production)
+### Etape 9 : Déploiement Kubernetes (production)
 
 ```bash
 # Démarrer Minikube avec suffisamment de ressources
@@ -158,15 +190,15 @@ minikube service prometheus
 minikube service grafana
 ```
 
-## Deux environnements
+## Trois environnements
 
 ### Dev (Docker Compose)
 
 Tous les services tournent en local via `docker compose up -d`. L'API charge le modèle depuis MLflow/MinIO.
 
-### Prod (Kubernetes / Minikube)
+### Prod locale (Minikube)
 
-L'intégralité des services est déployée sur le cluster Kubernetes :
+L'intégralité des services est déployée sur un cluster Kubernetes local :
 
 | Service | Déploiement | Méthode |
 |---|---|---|
@@ -178,6 +210,58 @@ L'intégralité des services est déployée sur le cluster Kubernetes :
 | Webapp Gradio | Manifest K8s (`k8s/webapp-deployment.yml`) | Communique avec le Service API interne |
 | Prometheus | Manifest K8s (`k8s/monitoring.yml`) | Scrape `/metrics` de l'API |
 | Grafana | Manifest K8s (`k8s/monitoring.yml`) | Dashboard pré-provisionné |
+
+Les manifests Minikube utilisent `imagePullPolicy: Never` (images buildées localement via `eval $(minikube docker-env)`).
+
+### Prod cloud (GKE Autopilot)
+
+Le même stack est déployé sur Google Kubernetes Engine avec des manifests adaptés dans `k8s/gke/` :
+
+- Les images Docker sont stockées sur **Google Artifact Registry** (`europe-west1-docker.pkg.dev`)
+- GKE Autopilot gère automatiquement les nodes (scaling, ressources)
+- Les Services de type `LoadBalancer` obtiennent des **IPs publiques** attribuées par GCP
+
+#### Déploiement GKE
+
+```bash
+# Prérequis : installer gcloud CLI
+brew install google-cloud-sdk  # ou: curl https://sdk.cloud.google.com | bash
+
+# Authentification et configuration
+gcloud auth login
+gcloud config set project <PROJECT_ID>
+gcloud services enable container.googleapis.com artifactregistry.googleapis.com
+
+# Créer le registry Docker
+gcloud artifacts repositories create drone-detection --repository-format=docker --location=europe-west1
+gcloud auth configure-docker europe-west1-docker.pkg.dev
+
+# Build et push les images (linux/amd64 pour GKE)
+docker build --platform linux/amd64 -f docker/Dockerfile.api -t europe-west1-docker.pkg.dev/<PROJECT_ID>/drone-detection/api:latest .
+docker build --platform linux/amd64 -f docker/Dockerfile.webapp -t europe-west1-docker.pkg.dev/<PROJECT_ID>/drone-detection/webapp:latest .
+docker build --platform linux/amd64 -f docker/Dockerfile.mlflow -t europe-west1-docker.pkg.dev/<PROJECT_ID>/drone-detection/mlflow:latest .
+docker push europe-west1-docker.pkg.dev/<PROJECT_ID>/drone-detection/api:latest
+docker push europe-west1-docker.pkg.dev/<PROJECT_ID>/drone-detection/webapp:latest
+docker push europe-west1-docker.pkg.dev/<PROJECT_ID>/drone-detection/mlflow:latest
+
+# Créer le cluster GKE Autopilot
+gcloud container clusters create-auto drone-cluster --region=europe-west1
+gcloud components install gke-gcloud-auth-plugin
+
+# Déployer les services infra via Helm
+helm repo add bitnami https://charts.bitnami.com/bitnami
+helm repo add minio https://charts.min.io/
+helm repo add apache-airflow https://airflow.apache.org
+helm install postgresql bitnami/postgresql -f k8s/helm/postgresql-values.yml
+helm install minio minio/minio -f k8s/helm/minio-values.yml
+helm install airflow apache-airflow/airflow -f k8s/helm/airflow-values.yml
+
+# Déployer les manifests GKE (API, Webapp, MLflow, Monitoring)
+kubectl apply -f k8s/gke/
+
+# Récupérer les IPs publiques
+kubectl get svc
+```
 
 L'API en production embarque le modèle `best.pt` directement dans l'image Docker (`LOCAL_MODEL_PATH`), ce qui évite la dépendance à MLflow au démarrage.
 
@@ -208,12 +292,17 @@ L'API en production embarque le modèle `best.pt` directement dans l'image Docke
 │   │   └── test_preprocess.py  # 4 tests : validation labels valides/invalides, image corrompue
 │   └── integration/
 │       └── test_api.py         # 2 tests : health check, prédiction sur image dummy
-├── k8s/
-│   ├── api-deployment.yml      # Deployment + Service (LoadBalancer :8000)
-│   ├── webapp-deployment.yml   # Deployment + Service (LoadBalancer :7860)
-│   ├── mlflow.yml              # Deployment + Service MLflow
-│   ├── monitoring.yml          # Prometheus + Grafana (Deployments + Services)
-│   └── helm/                   # Values files pour les Helm charts
+├── k8s/                           # Manifests Minikube (prod locale)
+│   ├── api-deployment.yml         # Deployment + Service (LoadBalancer :8000)
+│   ├── webapp-deployment.yml      # Deployment + Service (LoadBalancer :7860)
+│   ├── mlflow.yml                 # Deployment + Service MLflow
+│   ├── monitoring.yml             # Prometheus + Grafana (Deployments + Services)
+│   ├── gke/                       # Manifests GKE (prod cloud)
+│   │   ├── api-deployment.yml     # Images depuis Artifact Registry
+│   │   ├── webapp-deployment.yml
+│   │   ├── mlflow.yml
+│   │   └── monitoring.yml
+│   └── helm/                      # Values files pour les Helm charts
 │       ├── postgresql-values.yml
 │       ├── minio-values.yml
 │       └── airflow-values.yml
@@ -316,8 +405,10 @@ Interface Gradio avec :
 
 ### Kubernetes (`k8s/`)
 
-- **api-deployment.yml** : 1 replica, port 8000, `readinessProbe` sur `/health`, `imagePullPolicy: Never`, modèle embarqué via `LOCAL_MODEL_PATH`.
-- **webapp-deployment.yml** : 1 replica, port 7860, `imagePullPolicy: Never`, `API_URL` pointe vers le Service API interne.
+- **`k8s/`** (Minikube) : images locales avec `imagePullPolicy: Never`, accès via `minikube service`.
+- **`k8s/gke/`** (GKE) : images depuis Artifact Registry, Services LoadBalancer avec IPs publiques.
+- **api-deployment.yml** : 1 replica, port 8000, `readinessProbe` sur `/health`, modèle embarqué via `LOCAL_MODEL_PATH`.
+- **webapp-deployment.yml** : 1 replica, port 7860, `API_URL` pointe vers le Service API interne.
 - **mlflow.yml** : MLflow server connecté à PostgreSQL et MinIO.
 - **monitoring.yml** : ConfigMap Prometheus + Deployments/Services Prometheus et Grafana.
 - **helm/** : Values files pour PostgreSQL (bases séparées), MinIO (buckets), Airflow (LocalExecutor).
@@ -410,9 +501,27 @@ kubectl config use-context minikube
 kubectl config get-contexts
 ```
 
+#### Supprimer le cluster (stoppe la facturation)
+
+```bash
+gcloud container clusters delete drone-cluster --region=europe-west1
+```
+
+#### Recréer le cluster (les images Docker restent sur Artifact Registry)
+
+```bash
+gcloud container clusters create-auto drone-cluster --region=europe-west1
+gcloud container clusters get-credentials drone-cluster --region=europe-west1
+helm install postgresql bitnami/postgresql -f k8s/helm/postgresql-values.yml
+helm install minio minio/minio -f k8s/helm/minio-values.yml
+helm install airflow apache-airflow/airflow -f k8s/helm/airflow-values.yml
+kubectl apply -f k8s/gke/
+kubectl get svc    # récupérer les nouvelles IPs publiques
+```
+
 ## À faire
 
-- [ ] Déploiement cloud (GKE, AWS EKS, ou Azure AKS) pour une mise en production réelle
+- [x] Déploiement cloud sur GKE Autopilot (Google Kubernetes Engine)
 - [ ] Configuration des secrets DockerHub dans GitHub Actions pour le push d'images dans le CD
 - [ ] Tests end-to-end automatisés (upload image → prédiction → vérification résultat)
 - [ ] Tests de montée en charge avec Locust

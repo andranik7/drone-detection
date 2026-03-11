@@ -1,5 +1,7 @@
 x-airflow-common: &airflow-common
-  image: apache/airflow:2.7.3-python3.10
+  build:
+    context: .
+    dockerfile: docker/Dockerfile.airflow
   environment: &airflow-env
     AIRFLOW__CORE__EXECUTOR: LocalExecutor
     AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
@@ -7,10 +9,15 @@ x-airflow-common: &airflow-common
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "true"
     AIRFLOW__CORE__LOAD_EXAMPLES: "false"
     MLFLOW_TRACKING_URI: http://mlflow:5000
+    MLFLOW_S3_ENDPOINT_URL: http://minio:9000
+    AWS_ACCESS_KEY_ID: minioadmin
+    AWS_SECRET_ACCESS_KEY: minioadmin
     MINIO_ENDPOINT: minio:9000
     MINIO_ACCESS_KEY: minioadmin
     MINIO_SECRET_KEY: minioadmin
     MINIO_BUCKET: drone-detection
+    KAGGLE_USERNAME: ${KAGGLE_USERNAME}
+    KAGGLE_KEY: ${KAGGLE_KEY}
   volumes:
     - ./airflow/dags:/opt/airflow/dags
     - ./src:/opt/airflow/src

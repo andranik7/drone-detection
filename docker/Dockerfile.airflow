@@ -1,0 +1,18 @@
+FROM apache/airflow:2.7.3-python3.10
+
+USER root
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgl1 libglib2.0-0 libxcb1 \
+    && rm -rf /var/lib/apt/lists/*
+USER airflow
+
+RUN pip install --no-cache-dir \
+    kaggle==1.6.17 \
+    ultralytics \
+    pyyaml \
+    minio \
+    boto3 \
+    pillow \
+    mlflow \
+    psycopg2-binary \
+    opencv-python-headless
