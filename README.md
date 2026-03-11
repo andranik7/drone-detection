@@ -390,12 +390,35 @@ docker compose down     # stopper tous les services
 docker compose up -d    # relancer
 ```
 
-### Prod (Kubernetes)
+### Prod locale (Minikube)
 
 ```bash
 minikube stop           # stopper le cluster (pods, volumes conservés)
 minikube start          # relancer (tous les pods redémarrent automatiquement)
 ```
+
+### Prod cloud (GKE)
+
+```bash
+# Basculer kubectl vers GKE
+kubectl config use-context gke_gen-lang-client-0325944995_europe-west1_drone-cluster
+
+# Basculer kubectl vers Minikube
+kubectl config use-context minikube
+
+# Voir tous les contextes disponibles
+kubectl config get-contexts
+```
+
+## À faire
+
+- [ ] Déploiement cloud (GKE, AWS EKS, ou Azure AKS) pour une mise en production réelle
+- [ ] Configuration des secrets DockerHub dans GitHub Actions pour le push d'images dans le CD
+- [ ] Tests end-to-end automatisés (upload image → prédiction → vérification résultat)
+- [ ] Tests de montée en charge avec Locust
+- [ ] Authentification et gestion des accès API (API keys, OAuth)
+- [ ] Alerting Prometheus (alertes par email/Slack en cas d'anomalie)
+- [ ] Human-in-the-loop : interface de validation/correction des prédictions pour améliorer le dataset
 
 ## Compatibilité
 

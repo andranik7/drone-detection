@@ -9,8 +9,9 @@ sys.path.insert(0, "/opt/airflow")
 
 
 def download_task():
-    from src.data.download import download_dataset, verify_structure
+    from src.data.download import download_dataset, fix_data_yaml, verify_structure
     download_dataset()
+    fix_data_yaml()
     stats = verify_structure()
     print(f"Dataset stats: {stats}")
     return stats

@@ -5,6 +5,8 @@ import os
 import subprocess
 from pathlib import Path
 
+import yaml
+
 logger = logging.getLogger(__name__)
 
 DATA_DIR = Path(os.getenv("DATA_DIR", "data"))
@@ -21,6 +23,30 @@ def download_dataset(dest: Path = DATA_DIR) -> Path:
     )
     logger.info("Dataset downloaded successfully")
     return dest
+
+
+def fix_data_yaml(data_dir: Path = DATA_DIR) -> Path:
+    """Fix data.yaml paths to use relative paths compatible with YOLO."""
+    yaml_path = data_dir / "data.yaml"
+    dataset_dir = data_dir / "drone_dataset"
+
+    # Also check if data.yaml is inside drone_dataset/
+    if not yaml_path.exists() and (dataset_dir / "data.yaml").exists():
+        yaml_path = dataset_dir / "data.yaml"
+
+    correct_config = {
+        "path": "data/drone_dataset",
+        "train": "train/images",
+        "val": "valid/images",
+        "names": {0: "drone"},
+        "nc": 1,
+    }
+
+    with open(data_dir / "data.yaml", "w") as f:
+        yaml.dump(correct_config, f, default_flow_style=False)
+
+    logger.info("Fixed data.yaml with relative paths at %s", data_dir / "data.yaml")
+    return data_dir / "data.yaml"
 
 
 def verify_structure(data_dir: Path = DATA_DIR) -> dict:
@@ -40,6 +66,7 @@ def verify_structure(data_dir: Path = DATA_DIR) -> dict:
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     download_dataset()
+    fix_data_yaml()
     stats = verify_structure()
     for split, counts in stats.items():
         logger.info("%s: %d images, %d labels", split, counts["images"], counts["labels"])
